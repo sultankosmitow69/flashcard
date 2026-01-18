@@ -18,15 +18,16 @@
 <body>
   <div class="box">
     <h1>Generator fiszek do PDF (A4, 2×4, druk dwustronny po dłuższej krawędzi)</h1>
-    <p>Wgraj plik <b>.txt</b> lub <b>.csv</b>. Każdy wiersz = 1 fiszka: <code>english; /pron/; tłumaczenie</code> albo CSV z 3 kolumnami.</p>
-    <p class="hint">PDF tworzy: fronty (EN) + tyły (wymowa + PL) i automatycznie układa tyły tak, żeby pasowały przy druku dwustronnym “flip on long edge”.</p>
-
+    <p>Wgraj plik <b>.txt</b> lub <b>.csv</b>. Każdy wiersz = 1 fiszka: <code>znak; pinyin; polski</code></p>
     <input id="file" type="file" accept=".txt,.csv,text/plain,text/csv" />
     <div id="status" class="hint" style="margin-top:10px;"></div>
   </div>
 
-  <!-- pdf-lib from CDN -->
+  <!-- pdf-lib -->
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- fontkit: wymagane do osadzania czcionek TTF/OTF -->
+  <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+
   <script src="./app.js"></script>
 </body>
 </html>
