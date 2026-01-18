@@ -12,10 +12,31 @@
     .ok { color: #0a7; }
     .err { color: #c22; white-space: pre-wrap; }
   </style>
+  <style>
+/* ===== DRUK ===== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #printRoot,
+  #printRoot * {
+    visibility: visible;
+  }
+
+  #printRoot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+  }
+}
+</style>
+
 </head>
 <body>
   <div class="box">
-    <p>Generator fiszek do PDF</p>
+    <h1>Generator fiszek do PDF</h1>
     <p>Wgraj plik <b>.txt</b> lub <b>.csv</b>. Każdy wiersz = 1 fiszka: <code>znak; pinyin; polski</code></p>
     <input id="file" type="file" accept=".txt,.csv,text/plain,text/csv" />
     <div id="status" class="hint" style="margin-top:10px;"></div>
