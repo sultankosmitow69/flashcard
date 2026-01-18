@@ -1,210 +1,259 @@
 const input = document.getElementById("file");
 const status = document.getElementById("status");
+const printRoot = document.getElementById("printRoot");
+
+const COLS = 2;
+const ROWS = 4;
+const PER_PAGE = COLS * ROWS;
+
+// Druk: dwustronnie po dłuższej krawędzi => na tyle zamieniamy kolumny (mirror w poziomie)
+const MIRROR_BACK_H = true;
+
+injectStyles();
 
 input.addEventListener("change", async () => {
   try {
     status.textContent = "Czytam plik…";
 
-    const text = await input.files[0].text();
-    const lines = text
-      .split(/\r?\n/)
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith("#"));
+    const file = input.files?.[0];
+    if (!file) return;
 
-    if (!lines.length) {
-      status.textContent = "Plik pusty lub niepoprawny.";
-      return;
-    }
-
-    const cards = [];
-    for (const line of lines) {
-      const sep = line.includes(";") ? ";" : ",";
-      const parts = line.split(sep).map(p => p.trim());
-      if (parts.length < 3) continue;
-
-      cards.push({
-        han: parts[0],
-        pinyin: parts[1],
-        pl: parts.slice(2).join(sep).trim(),
-      });
-    }
+    const text = await file.text();
+    const cards = parseCards(text);
 
     if (!cards.length) {
-      status.textContent = "Nie znaleziono poprawnych wierszy (3 kolumny).";
+      status.textContent = "Brak poprawnych wierszy. Oczekuję: znak; pinyin; polski (albo CSV).";
       return;
     }
 
-    status.textContent = "Ładuję czcionkę Unicode…";
+    status.textContent = `Wczytano ${cards.length} fiszek. Buduję strony do druku…`;
 
-    const { PDFDocument } = PDFLib;
-    const pdfDoc = await PDFDocument.create();
-    pdfDoc.registerFontkit(fontkit);
+    // Czyść poprzedni podgląd
+    printRoot.innerHTML = "";
 
-    // MUSI być prawdziwy TTF, nie OTF
-    const fontResp = await fetch("./NotoSansSC-Regular.ttf");
-    if (!fontResp.ok) {
-      throw new Error("Nie znaleziono pliku: NotoSansSC-Regular.ttf (wrzuć go do repo obok index.html).");
-    }
-    const fontBytes = await fontResp.arrayBuffer();
-
-    // --- Wykrywanie formatu fontu (żeby nie było czarnych kwadratów) ---
-    const head = new TextDecoder("ascii").decode(fontBytes.slice(0, 4));
-    // TTF: 00 01 00 00 (binary), lub "ttcf" (kolekcja TTC)
-    const u8 = new Uint8Array(fontBytes.slice(0, 4));
-    const isTTF =
-      (u8[0] === 0x00 && u8[1] === 0x01 && u8[2] === 0x00 && u8[3] === 0x00) ||
-      head === "ttcf" ||
-      head === "true" ||
-      head === "typ1";
-    const isOTF = head === "OTTO";
-
-    if (isOTF) {
-      throw new Error(
-        "Masz font OTF (nagłówek OTTO). Podmień na prawdziwy TTF, bo OTF/CFF często daje czarne kwadraty w PDF viewerach."
-      );
-    }
-    if (!isTTF) {
-      throw new Error(
-        "Plik czcionki nie wygląda na TTF. Użyj statycznego TTF (nie OTF/variable/woff)."
-      );
-    }
-
-    // Najważniejsze: NIE subsetujemy (lepsza zgodność z viewerami)
-    const font = await pdfDoc.embedFont(fontBytes, { subset: false });
-
-    status.textContent = "Generuję PDF…";
-
-    // A4
-    const PAGE_W = 595.28;
-    const PAGE_H = 841.89;
-
-    // 2x4 na sztywno
-    const COLS = 2;
-    const ROWS = 4;
-    const PER_PAGE = COLS * ROWS;
-
-    const margin = 28; // ~10mm
-    const gutter = 12;
-
-    const usableW = PAGE_W - 2 * margin;
-    const usableH = PAGE_H - 2 * margin;
-    const cellW = (usableW - (COLS - 1) * gutter) / COLS;
-    const cellH = (usableH - (ROWS - 1) * gutter) / ROWS;
-
+    // Podział na paczki po 8 (2x4)
     for (let i = 0; i < cards.length; i += PER_PAGE) {
       const batch = cards.slice(i, i + PER_PAGE);
       while (batch.length < PER_PAGE) batch.push({ han: "", pinyin: "", pl: "" });
 
-      // FRONT: znak
-      {
-        const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-        drawCutLines(page);
+      // FRONT page
+      printRoot.appendChild(buildPage(batch, "front"));
 
-        for (let idx = 0; idx < PER_PAGE; idx++) {
-          const r = Math.floor(idx / COLS);
-          const c = idx % COLS;
-
-          const x = margin + c * (cellW + gutter);
-          const y = PAGE_H - margin - (r + 1) * cellH - r * gutter;
-
-          page.drawRectangle({ x, y, width: cellW, height: cellH, borderWidth: 0.6 });
-
-          const han = (batch[idx].han || "").trim();
-          if (!han) continue;
-
-          const size = han.length <= 2 ? 52 : 36;
-          drawCentered(page, font, han, size, x, y, cellW, cellH);
-        }
-      }
-
-      // BACK: pinyin + PL (flip on long edge => mirror kolumny)
-      {
-        const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-        drawCutLines(page);
-
-        for (let idx = 0; idx < PER_PAGE; idx++) {
-          const r = Math.floor(idx / COLS);
-          const c = idx % COLS;
-          const mc = COLS - 1 - c;
-
-          const x = margin + mc * (cellW + gutter);
-          const y = PAGE_H - margin - (r + 1) * cellH - r * gutter;
-
-          page.drawRectangle({ x, y, width: cellW, height: cellH, borderWidth: 0.6 });
-
-          const pinyin = (batch[idx].pinyin || "").trim();
-          const pl = (batch[idx].pl || "").trim();
-          if (!pinyin && !pl) continue;
-
-          drawTwoLines(page, font, pinyin, 16, pl, 20, x, y, cellW, cellH);
-        }
-      }
+      // BACK page
+      printRoot.appendChild(buildPage(batch, "back"));
     }
 
-    const pdfBytes = await pdfDoc.save();
-    download(pdfBytes, "fiszki.pdf");
-    status.textContent = "Gotowe – PDF pobrany.";
+    status.textContent = "Gotowe. Otwieram okno drukowania (Wybierz: Zapisz do PDF / druk dwustronny).";
 
+    // krótki timeout żeby przeglądarka zdążyła załadować font i wyrenderować
+    setTimeout(() => window.print(), 300);
+
+    // reset inputa
+    input.value = "";
   } catch (e) {
     status.textContent = "Błąd: " + (e?.message ?? String(e));
   }
 });
 
-function drawCentered(page, font, text, size, x, y, w, h) {
-  const tw = font.widthOfTextAtSize(text, size);
-  page.drawText(text, {
-    x: x + (w - tw) / 2,
-    y: y + (h - size) / 2,
-    size,
-    font,
-  });
+function parseCards(text) {
+  const lines = text
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith("#"));
+
+  const cards = [];
+  for (const line of lines) {
+    const sep = line.includes(";") ? ";" : ",";
+    const parts = line.split(sep).map(p => p.trim());
+    if (parts.length < 3) continue;
+
+    cards.push({
+      han: parts[0],
+      pinyin: parts[1],
+      pl: parts.slice(2).join(sep).trim(),
+    });
+  }
+  return cards;
 }
 
-function drawTwoLines(page, font, t1, s1, t2, s2, x, y, w, h) {
-  const gap = 8;
-  const total = (t1 ? s1 : 0) + (t2 ? s2 : 0) + (t1 && t2 ? gap : 0);
-  let cy = y + (h + total) / 2;
+function buildPage(batch, side) {
+  const page = document.createElement("div");
+  page.className = "page";
 
-  if (t1) {
-    cy -= s1;
-    const w1 = font.widthOfTextAtSize(t1, s1);
-    page.drawText(t1, { x: x + (w - w1) / 2, y: cy, size: s1, font });
-    cy -= gap;
+  // siatka 2x4
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  page.appendChild(grid);
+
+  for (let idx = 0; idx < PER_PAGE; idx++) {
+    const r = Math.floor(idx / COLS);
+    const c = idx % COLS;
+
+    // mirror na tyle: zamiana kolumn
+    const useC = (side === "back" && MIRROR_BACK_H) ? (COLS - 1 - c) : c;
+    const placeIdx = r * COLS + useC;
+
+    const card = batch[idx];
+    const cell = document.createElement("div");
+    cell.className = "cell";
+
+    if (side === "front") {
+      const t = (card.han || "").trim();
+      if (t) {
+        const big = document.createElement("div");
+        big.className = "frontText";
+        big.textContent = t;
+        cell.appendChild(big);
+      }
+    } else {
+      const p = (card.pinyin || "").trim();
+      const pl = (card.pl || "").trim();
+      if (p || pl) {
+        const pEl = document.createElement("div");
+        pEl.className = "backPinyin";
+        pEl.textContent = p;
+
+        const plEl = document.createElement("div");
+        plEl.className = "backPl";
+        plEl.textContent = pl;
+
+        cell.appendChild(pEl);
+        cell.appendChild(plEl);
+      }
+    }
+
+    // ustawiamy w gridzie w konkretnej pozycji
+    cell.style.gridRow = String(r + 1);
+    cell.style.gridColumn = String(useC + 1);
+
+    // UWAGA: żeby nie mieszać kolejności w DOM, po prostu dokładamy,
+    // grid i tak ustawi po gridRow/gridColumn.
+    grid.appendChild(cell);
   }
-  if (t2) {
-    cy -= s2;
-    const w2 = font.widthOfTextAtSize(t2, s2);
-    page.drawText(t2, { x: x + (w - w2) / 2, y: cy, size: s2, font });
-  }
-}
 
-function drawCutLines(page) {
-  const PAGE_W = 595.28;
-  const PAGE_H = 841.89;
-  const margin = 28;
-  const gutter = 12;
-  const COLS = 2;
-  const ROWS = 4;
+  // Linie cięcia (pion + poziom) jako overlay
+  const cuts = document.createElement("div");
+  cuts.className = "cuts";
+  page.appendChild(cuts);
 
-  const usableW = PAGE_W - 2 * margin;
-  const usableH = PAGE_H - 2 * margin;
-  const cellW = (usableW - (COLS - 1) * gutter) / COLS;
-  const cellH = (usableH - (ROWS - 1) * gutter) / ROWS;
+  // pionowa linia między kolumnami
+  const v = document.createElement("div");
+  v.className = "cutV";
+  cuts.appendChild(v);
 
-  for (let i = 1; i < COLS; i++) {
-    const x = margin + i * (cellW + gutter) - gutter / 2;
-    page.drawLine({ start: { x, y: margin }, end: { x, y: margin + usableH }, thickness: 0.3 });
-  }
+  // poziome linie między wierszami
   for (let j = 1; j < ROWS; j++) {
-    const y = margin + j * (cellH + gutter) - gutter / 2;
-    page.drawLine({ start: { x: margin, y }, end: { x: margin + usableW, y }, thickness: 0.3 });
+    const h = document.createElement("div");
+    h.className = "cutH";
+    h.style.top = `${(j / ROWS) * 100}%`;
+    cuts.appendChild(h);
   }
+
+  return page;
 }
 
-function download(bytes, name) {
-  const blob = new Blob([bytes], { type: "application/pdf" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
+function injectStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+/* Font (Unicode/CJK) */
+@font-face {
+  font-family: "NotoSansSC";
+  src: url("./NotoSansSC-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* Screen */
+#status { margin: 12px 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+#printRoot { margin-top: 8px; }
+
+/* Print pages */
+.page {
+  width: 210mm;
+  height: 297mm;
+  box-sizing: border-box;
+  padding: 10mm;
+  position: relative;
+  page-break-after: always;
+  background: white;
+}
+
+/* Grid 2x4 inside printable area */
+.grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(${COLS}, 1fr);
+  grid-template-rows: repeat(${ROWS}, 1fr);
+  gap: 4mm;
+}
+
+.cell {
+  border: 0.3mm solid #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: "NotoSansSC", sans-serif;
+  text-align: center;
+  padding: 3mm;
+  box-sizing: border-box;
+}
+
+/* Front: huge Hanzi */
+.frontText {
+  font-size: 18mm;
+  line-height: 1.0;
+}
+
+/* Back: pinyin + polish */
+.backPinyin {
+  font-size: 5mm;
+  line-height: 1.2;
+  margin-bottom: 2mm;
+}
+.backPl {
+  font-size: 6mm;
+  line-height: 1.2;
+}
+
+/* Cut lines overlay (between cells) */
+.cuts {
+  position: absolute;
+  left: 10mm;
+  top: 10mm;
+  right: 10mm;
+  bottom: 10mm;
+  pointer-events: none;
+}
+
+.cutV {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0.3mm;
+  background: #000;
+  transform: translateX(-2mm); /* korekta o połowę gapu (4mm) */
+  opacity: 0.35;
+}
+
+.cutH {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.3mm;
+  background: #000;
+  transform: translateY(-2mm); /* korekta o połowę gapu */
+  opacity: 0.35;
+}
+
+/* Print settings */
+@page { size: A4; margin: 0; }
+@media print {
+  body { margin: 0; }
+  #status, #file { display: none !important; }
+  #printRoot { margin: 0; }
+}
+  `;
+  document.head.appendChild(style);
 }
