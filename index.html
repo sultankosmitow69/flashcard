@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Generator fiszek PDF (A4 2×4)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    .box { max-width: 720px; padding: 16px; border: 1px solid #ddd; border-radius: 12px; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    p { margin: 8px 0; line-height: 1.4; }
+    input { margin-top: 10px; }
+    .hint { color: #555; font-size: 13px; }
+    .ok { color: #0a7; }
+    .err { color: #c22; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Generator fiszek do PDF (A4, 2×4, druk dwustronny po dłuższej krawędzi)</h1>
+    <p>Wgraj plik <b>.txt</b> lub <b>.csv</b>. Każdy wiersz = 1 fiszka: <code>english; /pron/; tłumaczenie</code> albo CSV z 3 kolumnami.</p>
+    <p class="hint">PDF tworzy: fronty (EN) + tyły (wymowa + PL) i automatycznie układa tyły tak, żeby pasowały przy druku dwustronnym “flip on long edge”.</p>
+
+    <input id="file" type="file" accept=".txt,.csv,text/plain,text/csv" />
+    <div id="status" class="hint" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- pdf-lib from CDN -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
