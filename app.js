@@ -25,7 +25,7 @@ input.addEventListener("change", async () => {
       cards.push({
         han: parts[0],
         pinyin: parts[1],
-        pl: parts.slice(2).join(sep)
+        pl: parts.slice(2).join(sep).trim(),
       });
     }
 
@@ -34,31 +34,56 @@ input.addEventListener("change", async () => {
       return;
     }
 
-    status.textContent = "Generuję PDF…";
+    status.textContent = "Ładuję czcionkę Unicode…";
 
     const { PDFDocument } = PDFLib;
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
 
-    // 🔥 KLUCZ: pełne osadzenie fontu Unicode (bez subset)
-    const fontBytes = await fetch("./NotoSansSC-Regular.ttf").then(r => {
-      if (!r.ok) throw new Error("Nie można załadować NotoSansSC-Regular.ttf");
-      return r.arrayBuffer();
-    });
+    // MUSI być prawdziwy TTF, nie OTF
+    const fontResp = await fetch("./NotoSansSC-Regular.ttf");
+    if (!fontResp.ok) {
+      throw new Error("Nie znaleziono pliku: NotoSansSC-Regular.ttf (wrzuć go do repo obok index.html).");
+    }
+    const fontBytes = await fontResp.arrayBuffer();
 
-    const font = await pdfDoc.embedFont(fontBytes, {
-      subset: false
-    });
+    // --- Wykrywanie formatu fontu (żeby nie było czarnych kwadratów) ---
+    const head = new TextDecoder("ascii").decode(fontBytes.slice(0, 4));
+    // TTF: 00 01 00 00 (binary), lub "ttcf" (kolekcja TTC)
+    const u8 = new Uint8Array(fontBytes.slice(0, 4));
+    const isTTF =
+      (u8[0] === 0x00 && u8[1] === 0x01 && u8[2] === 0x00 && u8[3] === 0x00) ||
+      head === "ttcf" ||
+      head === "true" ||
+      head === "typ1";
+    const isOTF = head === "OTTO";
+
+    if (isOTF) {
+      throw new Error(
+        "Masz font OTF (nagłówek OTTO). Podmień na prawdziwy TTF, bo OTF/CFF często daje czarne kwadraty w PDF viewerach."
+      );
+    }
+    if (!isTTF) {
+      throw new Error(
+        "Plik czcionki nie wygląda na TTF. Użyj statycznego TTF (nie OTF/variable/woff)."
+      );
+    }
+
+    // Najważniejsze: NIE subsetujemy (lepsza zgodność z viewerami)
+    const font = await pdfDoc.embedFont(fontBytes, { subset: false });
+
+    status.textContent = "Generuję PDF…";
 
     // A4
     const PAGE_W = 595.28;
     const PAGE_H = 841.89;
 
+    // 2x4 na sztywno
     const COLS = 2;
     const ROWS = 4;
     const PER_PAGE = COLS * ROWS;
 
-    const margin = 28;
+    const margin = 28; // ~10mm
     const gutter = 12;
 
     const usableW = PAGE_W - 2 * margin;
@@ -68,11 +93,9 @@ input.addEventListener("change", async () => {
 
     for (let i = 0; i < cards.length; i += PER_PAGE) {
       const batch = cards.slice(i, i + PER_PAGE);
-      while (batch.length < PER_PAGE) {
-        batch.push({ han: "", pinyin: "", pl: "" });
-      }
+      while (batch.length < PER_PAGE) batch.push({ han: "", pinyin: "", pl: "" });
 
-      // ---------- FRONT (chińskie znaki) ----------
+      // FRONT: znak
       {
         const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
         drawCutLines(page);
@@ -86,16 +109,15 @@ input.addEventListener("change", async () => {
 
           page.drawRectangle({ x, y, width: cellW, height: cellH, borderWidth: 0.6 });
 
-          const text = batch[idx].han;
-          if (!text) continue;
+          const han = (batch[idx].han || "").trim();
+          if (!han) continue;
 
-          const size = text.length <= 2 ? 52 : 36;
-          drawCentered(page, font, text, size, x, y, cellW, cellH);
+          const size = han.length <= 2 ? 52 : 36;
+          drawCentered(page, font, han, size, x, y, cellW, cellH);
         }
       }
 
-      // ---------- BACK (pinyin + polski) ----------
-      // flip on long edge → mirror columns
+      // BACK: pinyin + PL (flip on long edge => mirror kolumny)
       {
         const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
         drawCutLines(page);
@@ -110,7 +132,8 @@ input.addEventListener("change", async () => {
 
           page.drawRectangle({ x, y, width: cellW, height: cellH, borderWidth: 0.6 });
 
-          const { pinyin, pl } = batch[idx];
+          const pinyin = (batch[idx].pinyin || "").trim();
+          const pl = (batch[idx].pl || "").trim();
           if (!pinyin && !pl) continue;
 
           drawTwoLines(page, font, pinyin, 16, pl, 20, x, y, cellW, cellH);
@@ -123,7 +146,7 @@ input.addEventListener("change", async () => {
     status.textContent = "Gotowe – PDF pobrany.";
 
   } catch (e) {
-    status.textContent = "Błąd: " + e.message;
+    status.textContent = "Błąd: " + (e?.message ?? String(e));
   }
 });
 
@@ -133,7 +156,7 @@ function drawCentered(page, font, text, size, x, y, w, h) {
     x: x + (w - tw) / 2,
     y: y + (h - size) / 2,
     size,
-    font
+    font,
   });
 }
 
