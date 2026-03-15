@@ -2,57 +2,89 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
-    .box { max-width: 720px; padding: 16px; border: 1px solid #ddd; border-radius: 12px; }
-    h1 { font-size: 18px; margin: 0 0 12px; }
-    p { margin: 8px 0; line-height: 1.4; }
-    input { margin-top: 10px; }
-    .hint { color: #555; font-size: 13px; }
-    .ok { color: #0a7; }
-    .err { color: #c22; white-space: pre-wrap; }
-  </style>
-  <style>
-/* ===== DRUK ===== */
-@media print {
-  body * {
-    visibility: hidden;
+<style>
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 24px;
   }
 
-  #printRoot,
-  #printRoot * {
-    visibility: visible;
+  .box {
+    max-width: 900px;
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
   }
 
-  #printRoot {
-    position: absolute;
-    left: 0;
-    top: 0;
-    margin: 0;
+  h1 {
+    font-size: 18px;
+    margin: 0 0 12px;
   }
+
+  p {
+    margin: 8px 0;
+    line-height: 1.4;
+  }
+
+  input {
+    margin-top: 10px;
+  }
+
+  .hint {
+    color: #555;
+    font-size: 13px;
+  }
+
+  .err {
+    color: #c22;
+    white-space: pre-wrap;
+  }
+
   .tone-legend {
-  margin: 12px 0 14px;
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
-}
-  
+    margin: 12px 0 14px;
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .tone-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .tone-box {
     display: inline-block;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
     border: 1px solid #999;
-    margin-right: 8px;
-    vertical-align: middle;
     border-radius: 3px;
   }
-  
+
   .tone-4 { background: #0070C0; }
   .tone-3 { background: #00B050; }
   .tone-2 { background: #E97132; }
   .tone-1 { background: #EE0000; }
   .tone-0 { background: #000000; }
-}
+
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+
+    #printRoot,
+    #printRoot * {
+      visibility: visible;
+    }
+
+    #printRoot {
+      position: absolute;
+      left: 0;
+      top: 0;
+      margin: 0;
+      width: 100%;
+    }
+  }
 </style>
 
 </head>
