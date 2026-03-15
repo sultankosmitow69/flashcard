@@ -30,17 +30,63 @@
     top: 0;
     margin: 0;
   }
+  .tone-legend {
+  margin: 12px 0 14px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+  
+  .tone-box {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #999;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 3px;
+  }
+  
+  .tone-4 { background: #0070C0; }
+  .tone-3 { background: #00B050; }
+  .tone-2 { background: #E97132; }
+  .tone-1 { background: #EE0000; }
+  .tone-0 { background: #000000; }
 }
 </style>
 
 </head>
 <body>
-  <div class="box">
-    <h1>Generator fiszek do PDF</h1>
-    <p>Wgraj plik <b>.txt</b> lub <b>.csv</b>. Każdy wiersz = 1 fiszka: <code>znak; pinyin; polski</code></p>
-    <input id="file" type="file" accept=".txt,.csv,text/plain,text/csv" />
-    <div id="status" class="hint" style="margin-top:10px;"></div>
+<div class="box">
+  <h1>Generator fiszek do PDF</h1>
+
+  <p>
+    Wgraj plik <b>.txt</b> lub <b>.csv</b>. Każdy wiersz = 1 fiszka w formacie:
+    <code>znak; pinyin; polski; ton</code>
+  </p>
+
+  <p class="hint">
+    Przykład:
+    <br><code>人; rén; człowiek; 2</code>
+    <br><code>家; jiā; dom; 1</code>
+    <br><code>中国; Zhōngguó; Chiny; 0</code>
+  </p>
+
+  <p class="hint">
+    Kolor zależy od ostatniej kolumny:
+  </p>
+
+  <div class="tone-legend">
+    <div><span class="tone-box tone-4"></span> 4 = niebieski (#0070C0)</div>
+    <div><span class="tone-box tone-3"></span> 3 = zielony (#00B050)</div>
+    <div><span class="tone-box tone-2"></span> 2 = pomarańczowy (#E97132)</div>
+    <div><span class="tone-box tone-1"></span> 1 = czerwony (#EE0000)</div>
+    <div><span class="tone-box tone-0"></span> 0 = czarny (#000000)</div>
   </div>
+
+  <input id="file" type="file" accept=".txt,.csv,text/plain,text/csv" />
+  <div id="status" class="hint" style="margin-top:10px;"></div>
+</div>
 
 <div id="status"></div>
 <!-- Tu generator podglądu do druku -->
