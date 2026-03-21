@@ -34,7 +34,7 @@ input.addEventListener("change", async () => {
     const cards = parseCards(text);
 
     if (!cards.length) {
-      status.textContent = "Brak poprawnych wierszy. Oczekuję: znak; pinyin; polski; kolor";
+      status.textContent = "Brak poprawnych wierszy. Oczekuję: znak; pinyin; polski; ton";
       return;
     }
 
@@ -78,8 +78,8 @@ function parseCards(text) {
 
     if (parts.length < 4) continue;
 
-    const colorKey = parts[3];
-    const color = COLOR_MAP[colorKey] || "#000000";
+    const toneKey = parts[3];
+    const color = COLOR_MAP[toneKey] || "#000000";
 
     cards.push({
       han: parts[0],
@@ -108,10 +108,9 @@ function buildPage(batch, side) {
 
     const card = batch[idx];
     const cell = document.createElement("div");
-    cell.className = "cell";
+    cell.className = `cell ${side === "front" ? "frontCell" : "backCell"}`;
     cell.style.gridRow = String(r + 1);
     cell.style.gridColumn = String(useC + 1);
-    cell.style.color = card.color || "#000000";
 
     if (side === "front") {
       const t = (card.han || "").trim();
@@ -119,6 +118,7 @@ function buildPage(batch, side) {
         const big = document.createElement("div");
         big.className = "frontText";
         big.textContent = t;
+        big.style.color = card.color || "#000000";
         cell.appendChild(big);
       }
     } else {
@@ -126,16 +126,25 @@ function buildPage(batch, side) {
       const pl = (card.pl || "").trim();
 
       if (p || pl) {
-        const pEl = document.createElement("div");
-        pEl.className = "backPinyin";
-        pEl.textContent = p;
+        const layout = document.createElement("div");
+        layout.className = "backLayout";
 
-        const plEl = document.createElement("div");
-        plEl.className = "backPl";
-        plEl.textContent = pl;
+        for (let row = 1; row <= 6; row++) {
+          const rowEl = document.createElement("div");
+          rowEl.className = "backRow";
 
-        cell.appendChild(pEl);
-        cell.appendChild(plEl);
+          if (row === 3) {
+            rowEl.classList.add("backPinyin");
+            rowEl.textContent = p;
+          } else if (row === 6) {
+            rowEl.classList.add("backPl");
+            rowEl.textContent = pl ? `(${pl})` : "";
+          }
+
+          layout.appendChild(rowEl);
+        }
+
+        cell.appendChild(layout);
       }
     }
 
@@ -148,12 +157,6 @@ function buildPage(batch, side) {
 function injectStyles() {
   const style = document.createElement("style");
   style.textContent = `
-@font-face {
-  font-family: "NotoSansSC";
-  src: url("./NotoSansSC-Regular.ttf") format("truetype");
-  font-display: swap;
-}
-
 @page {
   size: A4;
   margin: 0;
@@ -166,7 +169,6 @@ function injectStyles() {
   position: relative;
   page-break-after: always;
   background: white;
-
   display: flex;
   justify-content: center;
   align-items: center;
@@ -185,32 +187,65 @@ function injectStyles() {
   width: ${CARD_SIZE_CM}cm;
   height: ${CARD_SIZE_CM}cm;
   border: 0.3mm solid #000;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  font-family: "NotoSansSC", sans-serif;
-  text-align: center;
-  padding: 4mm;
   box-sizing: border-box;
   overflow: hidden;
+  background: #fff;
+}
+
+/* PRZÓD */
+.frontCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .frontText {
-  font-size: 28mm;
+  font-family: "SimSun", "NSimSun", "Songti SC", serif;
+  font-size: 200pt;
+  font-weight: 400;
   line-height: 1;
-  font-weight: 500;
+  text-align: center;
+  width: 100%;
+}
+
+/* TYŁ */
+.backCell {
+  padding: 0;
+}
+
+.backLayout {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  color: #000000;
+  font-family: "Bookman Old Style", "Book Antiqua", Georgia, serif;
+  font-size: 22pt;
+  line-height: 1;
+  box-sizing: border-box;
+  padding: 0 6mm;
+}
+
+.backRow {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  color: #000000;
 }
 
 .backPinyin {
-  font-size: 7mm;
-  line-height: 1.2;
-  margin-bottom: 4mm;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
 }
 
 .backPl {
-  font-size: 8mm;
-  line-height: 1.2;
+  justify-content: flex-start;
+  text-align: left;
+  font-weight: 400;
 }
 
 @media print {
