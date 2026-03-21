@@ -202,7 +202,7 @@ function injectStyles() {
 
 .frontText {
   font-family: "SimSun", "NSimSun", "Songti SC", serif;
-  font-size: 200pt;
+  font-size: 180pt;
   font-weight: 400;
   line-height: 1;
   text-align: center;
