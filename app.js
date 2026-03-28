@@ -232,21 +232,26 @@ function injectStyles() {
   margin: 0;
   padding: 0;
   min-height: 0;
-  display: flex;
-  align-items: center;
   color: #000000;
 }
 
 .backPinyin {
+  display: flex;
+  align-items: center;
   justify-content: center;
   text-align: center;
   font-weight: 700;
+  height: 100%;
 }
 
 .backPl {
+  display: flex;
+  align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
   font-weight: 400;
+  height: 100%;
+  padding-top: 2mm;
 }
 
 @media print {
