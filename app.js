@@ -122,7 +122,7 @@ function buildPage(batch, side) {
         big.style.color = card.color || "#000000";
         cell.appendChild(big);
       }
-    } else {
+        } else {
       const p = (card.pinyin || "").trim();
       const pl = (card.pl || "").trim();
 
@@ -130,23 +130,19 @@ function buildPage(batch, side) {
         const layout = document.createElement("div");
         layout.className = "backLayout";
 
-      for (let row = 1; row <= 6; row++) {
-        const rowEl = document.createElement("div");
-        rowEl.className = "backRow";
-      
-        if (row === 3) {
-          rowEl.classList.add("backPinyin");
-          rowEl.textContent = p;
-        } else if (row === 5) {
-          rowEl.classList.add("backPl");
-          rowEl.textContent = pl ? `(${pl})` : "";
-        }
-      
-        layout.appendChild(rowEl);
-      }
+        const pinyinEl = document.createElement("div");
+        pinyinEl.className = "backPinyin";
+        pinyinEl.textContent = p;
 
+        const plEl = document.createElement("div");
+        plEl.className = "backPl";
+        plEl.textContent = pl ? `(${pl})` : "";
+
+        layout.appendChild(pinyinEl);
+        layout.appendChild(plEl);
         cell.appendChild(layout);
       }
+    }
     }
 
     grid.appendChild(cell);
@@ -182,6 +178,8 @@ function injectStyles() {
   grid-template-columns: repeat(${COLS}, ${CARD_WSIZE_CM}cm);
   grid-template-rows: repeat(${ROWS}, ${CARD_HSIZE_CM}cm);
   gap: 0;
+  justify-content: start;
+  align-content: start;
 }
 
 .cell {
