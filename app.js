@@ -10,7 +10,8 @@ const PER_PAGE = COLS * ROWS;
 const MIRROR_BACK_H = true;
 
 // rozmiar jednej fiszki
-const CARD_SIZE_CM = 9;
+const CARD_WSIZE_CM = 8;
+const CARD_HSIZE_CM = 10;
 
 // mapowanie koloru z CSV
 const COLOR_MAP = {
@@ -175,8 +176,8 @@ function injectStyles() {
 }
 
 .grid {
-  width: calc(${CARD_SIZE_CM}cm * 2);
-  height: calc(${CARD_SIZE_CM}cm * 2);
+  width: calc(${CARD_WSIZE_CM}cm * 2);
+  height: calc(${CARD_HSIZE_CM}cm * 2);
   display: grid;
   grid-template-columns: repeat(${COLS}, ${CARD_SIZE_CM}cm);
   grid-template-rows: repeat(${ROWS}, ${CARD_SIZE_CM}cm);
