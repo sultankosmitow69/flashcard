@@ -137,7 +137,7 @@ function buildPage(batch, side) {
           if (row === 3) {
             rowEl.classList.add("backPinyin");
             rowEl.textContent = p;
-          } else if (row === 6) {
+          } else if (row === 5) {
             rowEl.classList.add("backPl");
             rowEl.textContent = pl ? `(${pl})` : "";
           }
@@ -176,11 +176,11 @@ function injectStyles() {
 }
 
 .grid {
-  width: calc(${CARD_WSIZE_CM}cm * 2);
-  height: calc(${CARD_HSIZE_CM}cm * 2);
+  width: calc(${CARD_WSIZE_CM}cm * ${COLS});
+  height: calc(${CARD_HSIZE_CM}cm * ${ROWS});
   display: grid;
-  grid-template-columns: repeat(${COLS}, ${CARD_HSIZE_CM}cm);
-  grid-template-rows: repeat(${ROWS}, ${CARD_WSIZE_CM}cm);
+  grid-template-columns: repeat(${COLS}, ${CARD_WSIZE_CM}cm);
+  grid-template-rows: repeat(${ROWS}, ${CARD_HSIZE_CM}cm);
   gap: 0;
 }
 
