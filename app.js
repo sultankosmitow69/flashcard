@@ -130,20 +130,20 @@ function buildPage(batch, side) {
         const layout = document.createElement("div");
         layout.className = "backLayout";
 
-        for (let row = 1; row <= 6; row++) {
-          const rowEl = document.createElement("div");
-          rowEl.className = "backRow";
-
-          if (row === 3) {
-            rowEl.classList.add("backPinyin");
-            rowEl.textContent = p;
-          } else if (row === 5) {
-            rowEl.classList.add("backPl");
-            rowEl.textContent = pl ? `(${pl})` : "";
-          }
-
-          layout.appendChild(rowEl);
+      for (let row = 1; row <= 6; row++) {
+        const rowEl = document.createElement("div");
+        rowEl.className = "backRow";
+      
+        if (row === 3) {
+          rowEl.classList.add("backPinyin");
+          rowEl.textContent = p;
+        } else if (row === 5) {
+          rowEl.classList.add("backPl");
+          rowEl.textContent = pl ? `(${pl})` : "";
         }
+      
+        layout.appendChild(rowEl);
+      }
 
         cell.appendChild(layout);
       }
