@@ -179,14 +179,14 @@ function injectStyles() {
   width: calc(${CARD_WSIZE_CM}cm * 2);
   height: calc(${CARD_HSIZE_CM}cm * 2);
   display: grid;
-  grid-template-columns: repeat(${COLS}, ${CARD_SIZE_CM}cm);
-  grid-template-rows: repeat(${ROWS}, ${CARD_SIZE_CM}cm);
+  grid-template-columns: repeat(${COLS}, ${CARD_HSIZE_CM}cm);
+  grid-template-rows: repeat(${ROWS}, ${CARD_WSIZE_CM}cm);
   gap: 0;
 }
 
 .cell {
-  width: ${CARD_SIZE_CM}cm;
-  height: ${CARD_SIZE_CM}cm;
+  width: ${CARD_WSIZE_CM}cm;
+  height: ${CARD_HSIZE_CM}cm;
   border: 0.3mm solid #000;
   box-sizing: border-box;
   overflow: hidden;
