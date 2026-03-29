@@ -143,8 +143,7 @@ function buildPage(batch, side) {
         cell.appendChild(layout);
       }
     }
-    }
-
+    
     grid.appendChild(cell);
   }
 
@@ -214,42 +213,33 @@ function injectStyles() {
 }
 
 .backLayout {
-  height: 100%;
+  position: relative;
   width: 100%;
-  display: grid;
-  grid-template-rows: repeat(6, 1fr);
-  color: #000000;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 4mm;
+  color: #000;
   font-family: "Bookman Old Style", "Book Antiqua", Georgia, serif;
   font-size: 22pt;
   line-height: 1;
-  box-sizing: border-box;
-  padding: 0 6mm;
-}
-
-.backRow {
-  margin: 0;
-  padding: 0;
-  min-height: 0;
-  color: #000000;
 }
 
 .backPinyin {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  left: 4mm;
+  right: 4mm;
+  top: 26%;
   text-align: center;
   font-weight: 700;
-  height: 100%;
 }
 
 .backPl {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  position: absolute;
+  left: 4mm;
+  right: 4mm;
+  top: 72%;
   text-align: left;
   font-weight: 400;
-  height: 100%;
-  padding-top: 2mm;
 }
 
 @media print {
